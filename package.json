@@ -1,37 +1,38 @@
 {
-  "name": "styled-formatter",
-  "version": "1.0.0",
-  "description": "CLI for formatting styled-components template literals",
-  "main": "dist/index.js",
-  "bin": {
-    "styled-formatter": "dist/src/cli.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "lint": "eslint . --ext .ts",
-    "start": "node dist/src/cli.js"
-  },
-  "author": "yudppp",
-  "license": "MIT",
-  "dependencies": {
-    "commander": "^10.0.0",
-    "glob": "^11.0.0",
-    "kleur": "^4.1.5"
-  },
-  "devDependencies": {
-    "@types/acorn": "^6.0.4",
-    "@types/diff": "^6.0.0",
-    "@types/jest": "^29.5.14",
-    "@types/node": "^22.9.0",
-    "acorn": "^8.14.0",
-    "acorn-walk": "^8.3.4",
-    "diff": "^7.0.0",
-    "jest": "^29.7.0",
-    "postcss": "^8.4.49",
-    "postcss-scss": "^4.0.9",
-    "postcss-sorting": "^9.1.0",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.6.3"
-  }
+	"name": "styled-formatter",
+	"version": "1.0.0",
+	"description": "CLI for formatting styled-components template literals",
+	"main": "dist/index.js",
+	"bin": {
+		"styled-formatter": "dist/src/cli.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"test": "node --experimental-vm-modules node_modules/.bin/jest",
+		"lint": "@biomejs/biome format --write .",
+		"start": "node dist/src/cli.js"
+	},
+	"author": "yudppp",
+	"license": "MIT",
+	"dependencies": {
+		"@babel/parser": "^7.26.3",
+		"@babel/traverse": "^7.26.3",
+		"@biomejs/biome": "1.9.4",
+		"@swc/jest": "^0.2.37",
+		"commander": "^10.0.0",
+		"diff": "^7.0.0",
+		"glob": "^11.0.0",
+		"globals": "^15.12.0",
+		"jest": "^29.7.0",
+		"kleur": "^4.1.5",
+		"prettier": "^3.4.2",
+		"ts-jest": "^29.2.5",
+		"typescript": "^5.6.3"
+	},
+	"devDependencies": {
+		"@types/babel__traverse": "^7.20.6",
+		"@types/diff": "^6.0.0",
+		"@types/jest": "^29.5.14",
+		"@types/node": "^22.9.0"
+	}
 }

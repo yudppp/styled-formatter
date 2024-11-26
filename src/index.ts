@@ -1,140 +1,272 @@
-import * as acorn from "acorn";
-import { simple } from "acorn-walk";
-import postcss, { ProcessOptions } from "postcss";
-import postcssScss from "postcss-scss";
+import { parse } from "@babel/parser";
+import traverse, { NodePath } from "@babel/traverse";
+import * as t from "@babel/types";
+import prettier from "prettier";
 
 /**
- * Formats a PostCSS node recursively.
- * Ensures proper indentation for nested rules.
- * @param node - The PostCSS node to format.
- * @param indentLevel - The current level of indentation.
- * @returns The formatted CSS as a string.
+ * Format the specified content using Prettier
+ * @param code Code to be formatted
+ * @param indent Indentation type (tab or number of spaces)
+ * @returns Formatted code
  */
-const formatPostCSSNode = (node: postcss.ChildNode, indentLevel: number = 2, depth = 1): string => {
-  const indent = " ".repeat(indentLevel * depth);
-  let result = "";
-  if (node.type === "rule") {
-    result += `${indent}${node.selector} {\n`;
-    node.nodes.forEach((child: any) => {
-      result += formatPostCSSNode(child, indentLevel, depth + 1);
-    });
-    result += `${indent}}\n`;
-  } else if (node.type === "decl") {
-    result += `${indent}${node.prop.trim()}: ${node.value.trim()};\n`;
-  } else if (node.type === "atrule") {
-    result += `${indent}@${node.name.trim()} ${node.params.trim()} {\n`;
-    node.nodes?.forEach((child: any) => {
-      result += formatPostCSSNode(child, indentLevel, depth+1);
-    });
-    result += `${indent}}\n`;
-  } else if (node.type === "comment") {
-    const comment = node
-    result += `${indent}/* ${comment.text.trim()} */\n`;
-  }
-  return result;
+export const formatWithContext = async (
+	code: string,
+	indent: "tab" | number,
+): Promise<string> => {
+	try {
+		return prettier.format(code, {
+			semi: false,
+			parser: "css",
+			useTabs: indent === "tab",
+			tabWidth: indent === "tab" ? 1 : indent,
+		});
+	} catch (error) {
+		console.error("Failed to format code with Prettier:", error);
+		return code;
+	}
+};
+
+export type FormatOption = {
+	indent: "tab" | number;
 };
 
 /**
- * Formats CSS using PostCSS AST.
- * @param css - The raw CSS string to format.
- * @returns The formatted CSS string with consistent indentation.
+ * Determines if a given node is a styled-components tag
+ * @param tag The AST node to check
+ * @returns boolean indicating if the node is a styled-components tag
  */
-const formatCSS = (css: string, indentLevel: number = 2): string => {
-  if (!css.trim()) {
-    return "";
-  }
-  try {
-    // Define ProcessOptions explicitly to include `syntax`
-    const options: ProcessOptions = {
-      syntax: postcssScss,
-      from: undefined,
-    };
+const isStyledComponentTag = (tag: t.Expression): boolean => {
+	if (t.isMemberExpression(tag)) {
+		// styled.div
+		return t.isIdentifier(tag.object, { name: "styled" });
+	}
 
-    const root = postcss.parse(css, options); // Use correct options type
-    let formattedCSS = "";
+	if (t.isCallExpression(tag)) {
+		const callee = tag.callee;
+		return (
+			t.isIdentifier(callee, { name: "styled" }) ||
+			(t.isMemberExpression(callee) &&
+				t.isIdentifier(callee.object, { name: "styled" }))
+		);
+	}
 
-    root.nodes.forEach((node: postcss.ChildNode) => {
-      formattedCSS += formatPostCSSNode(node, indentLevel);
-    });
-    return formattedCSS.split('\n').filter(v => v.trim() !== "").join('\n')
-  } catch (error) {
-    console.error("Error formatting CSS:", error);
-    return css; // Fallback to original CSS on error
-  }
+	return false;
 };
 
 /**
- * Formats template literals tagged with `styled` or `css`.
- * @param code - The full source code containing template literals.
- * @returns The source code with formatted template literals.
+ * Creates a unique placeholder for expressions
+ * @param counter Current counter value
+ * @param before Character before the expression
+ * @param after Character after the expression
+ * @returns Generated placeholder
  */
-export const formatTemplateLiterals = (code: string): string => {
-  try {
-    const ast = acorn.parse(code, {
-      ecmaVersion: 2022,
-      sourceType: "module",
-    });
+const createPlaceholder = (
+	counter: number,
+	beforeText: string,
+	afterText: string,
+): string => {
+	const base = `__EXPR_${counter}__`;
+	const isConnectChar = /^[a-zA-Z:;]/.test(afterText.slice(0, 1));
+	if (isConnectChar) {
+		return `\$${base}`;
+	}
+	return beforeText.trimEnd().slice(-1) === ":" ? `\$${base}` : `/* ${base} */`;
+};
 
-    const replacements: Array<{
-      start: number;
-      end: number;
-      content: string;
-    }> = [];
+/**
+ * Filters an array to include only Expression nodes
+ * @param items Array containing Expression or TSType nodes
+ * @returns Array containing only Expression nodes
+ */
+const filterExpressions = (
+	items: (t.Expression | t.TSType)[],
+): t.Expression[] => {
+	return items.filter((item): item is t.Expression => t.isExpression(item));
+};
 
-    simple(ast, {
-      TaggedTemplateExpression(node: acorn.TaggedTemplateExpression) {
-        const tag = node.tag;
-        let tagName = "";
+/**
+ * Replaces expressions and comments in template literals with placeholders
+ * @param quasis Template elements
+ * @param expressions Embedded expressions (filtered to Expression[])
+ * @param originalCode Original code string
+ * @returns Object containing the modified string and mappings for restoration
+ */
+const replacePlaceholders = (
+	quasis: t.TemplateElement[],
+	expressions: t.Expression[],
+	originalCode: string,
+) => {
+	let placeholderCounter = 0;
+	let commentCounter = 0;
+	const expressionMap: Record<string, string> = {};
+	const commentMap: Record<string, string> = {};
 
-        if (tag.type === "Identifier") {
-          tagName = tag.name; // Example: css
-        } else if (tag.type === "MemberExpression") {
-          tagName = tag.object.type === "Identifier" ? tag.object.name : "";
-        } else if (tag.type === "CallExpression") {
-          if (tag.callee.type === "Identifier") {
-            tagName = tag.callee.name; // Example: styled(Wrap)
-          } else if (
-            tag.callee.type === "MemberExpression" &&
-            tag.callee.object.type === "Identifier"
-          ) {
-            tagName = tag.callee.object.name;
-          }
-        }
+	const formattedParts = quasis.map((quasi, index) => {
+		let text = quasi.value.cooked || quasi.value.raw;
 
-        // Process only styled and css tagged templates
-        if (tagName === "styled" || tagName === "css") {
-          const template = node.quasi.quasis[0].value.raw;
-          const formattedCSS = formatCSS(template);
-          if (!formattedCSS) {
-            replacements.push({
-                start: node.quasi.quasis[0].start,
-                end: node.quasi.quasis[0].end,
-                content: "",
-              });
-            return;
-          }
+		if (index < expressions.length) {
+			const nextQuasi = quasis[index + 1];
+			const beforeText = text;
+			const afterText = nextQuasi?.value?.cooked ?? nextQuasi?.value?.raw ?? "";
+			const placeholder = createPlaceholder(
+				placeholderCounter++,
+				beforeText,
+				afterText,
+			);
+			const expr = expressions[index];
 
+			if (expr.start === undefined || expr.end === undefined) {
+				throw new Error("Expression does not have start or end position");
+			}
 
-          // Replace content only if formatting was successful
-          replacements.push({
-            start: node.quasi.quasis[0].start,
-            end: node.quasi.quasis[0].end,
-            content: `\n${formattedCSS}\n`,
-          });
-        }
-      },
-    });
+			expressionMap[placeholder] = originalCode.slice(
+				expr.start ?? 0,
+				expr.end ?? 0,
+			);
+			text += placeholder;
+		}
 
-    // Apply replacements from end to start to maintain positions
-    return replacements
-      .sort((a, b) => b.start - a.start) // Replace from back to front
-      .reduce((updatedCode, { start, end, content }) => {
-        return (
-          updatedCode.slice(0, start) + content + updatedCode.slice(end)
-        );
-      }, code);
-  } catch (error) {
-    console.error("Failed to format template literals:", error);
-    return code; // Fallback to original code on error
-  }
+		// Replace inline comments
+		const commentRegex1 = /\/\*([\s\S]*?)\*\//gm;
+		text = text.replace(commentRegex1, (match) => {
+			const commentPlaceholder = `/* __COMMENT_${commentCounter++}__ */`;
+			commentMap[commentPlaceholder] = match;
+			return commentPlaceholder;
+		});
+		const commentRegex2 = /\/\/.*$/gm;
+		text = text.replace(commentRegex2, (match) => {
+			const commentPlaceholder = `/* __COMMENT_${commentCounter++}__ */`;
+			commentMap[commentPlaceholder] = match;
+			return commentPlaceholder;
+		});
+		return text;
+	});
+
+	return {
+		concatenated: formattedParts.join(""),
+		expressionMap,
+		commentMap,
+	};
+};
+
+/**
+ * Restores expressions and comments in the formatted template literal
+ * @param formatted Formatted template string with placeholders
+ * @param expressionMap Mapping of expression placeholders to original expressions
+ * @param commentMap Mapping of comment placeholders to original comments
+ * @param indentChar Indentation characters
+ * @returns Restored template literal string
+ */
+const restorePlaceholders = (
+	formatted: string,
+	expressionMap: Record<string, string>,
+	commentMap: Record<string, string>,
+	indentChar: string,
+): string => {
+	if (formatted.trim() === "") return "``";
+	let restored =
+		"`\n" +
+		formatted
+			.split("\n")
+			.map((line) => (line === "" ? "" : `${indentChar}${line}`))
+			.join("\n") +
+		"`";
+	for (const [placeholder, comment] of Object.entries(commentMap)) {
+		restored = restored.replace(placeholder, comment);
+	}
+
+	for (const [placeholder, expr] of Object.entries(expressionMap)) {
+		restored = restored.replace(placeholder, `\${${expr}}`);
+	}
+
+	return restored;
+};
+
+/**
+ * Formats template literals within styled-components.
+ * Replaces embedded expressions (${...}) with placeholders before formatting
+ * and restores them afterward. The replacement method is determined based on
+ * surrounding characters.
+ * @param code TypeScript code to be formatted
+ * @param option Formatting options
+ * @returns Formatted code
+ */
+export const formatTemplateLiterals = async (
+	code: string,
+	option: FormatOption = { indent: 2 },
+): Promise<string> => {
+	const { indent } = option;
+	const indentChar = indent === "tab" ? "\t" : " ".repeat(indent);
+
+	try {
+		const ast = parse(code, {
+			sourceType: "module",
+			plugins: ["typescript", "jsx"],
+			ranges: true,
+			tokens: true,
+		});
+
+		const taggedTemplateExpressions: t.TaggedTemplateExpression[] = [];
+
+		traverse(ast, {
+			TaggedTemplateExpression(path: NodePath<t.TaggedTemplateExpression>) {
+				if (
+					isStyledComponentTag(path.node.tag) &&
+					path.node.quasi.quasis.length > 0
+				) {
+					taggedTemplateExpressions.push(path.node);
+				}
+			},
+		});
+
+		const replacements: Array<{ start: number; end: number; content: string }> =
+			[];
+
+		for (const node of taggedTemplateExpressions) {
+			const { quasis, expressions } = node.quasi;
+
+			const pureExpressions = filterExpressions(expressions);
+			if (node.quasi.start !== null && node.quasi.end !== null) {
+				const { concatenated, expressionMap, commentMap } = replacePlaceholders(
+					quasis,
+					pureExpressions,
+					code,
+				);
+
+				const formatted = await formatWithContext(concatenated, indent);
+
+				const restored = restorePlaceholders(
+					formatted,
+					expressionMap,
+					commentMap,
+					indentChar,
+				);
+
+				replacements.push({
+					start: node.quasi.start ?? 0,
+					end: node.quasi.end ?? 0,
+					content: restored,
+				});
+			} else {
+				console.warn(
+					`Skipped formatting for a node with null start or end: ${node.type}`,
+				);
+			}
+		}
+
+		// Apply replacements from back to front to prevent position shifts
+		const sortedReplacements = replacements.sort((a, b) => b.start - a.start);
+		let updatedCode = code;
+
+		for (const { start, end, content } of sortedReplacements) {
+			updatedCode =
+				updatedCode.slice(0, start) + content + updatedCode.slice(end);
+		}
+
+		return updatedCode;
+	} catch (error) {
+		console.error("Failed to format template literals:", error);
+		console.error("Input data:", code);
+		return code;
+	}
 };

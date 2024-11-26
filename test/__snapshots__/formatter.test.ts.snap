@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`formatTemplateLiterals Snapshot tests should match the snapshot for complex styled-component 1`] = `
+"
+import styled from "styled-components";
+
+const ComplexButton = styled.button\`
+  color: \${props => props.color || "black"};
+  background: \${props => props.primary ? "blue" : "gray"};
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  &:hover {
+    background: \${props => props.primary ? "darkblue" : "darkgray"};
+  }
+  @media (max-width: 600px) {
+    width: 100%;
+    padding: 15px 25px;
+  }
+\`;
+"
+`;

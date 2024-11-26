@@ -1,21 +1,24 @@
 # styled-formatter
 
-A CLI tool for formatting `styled-components` template literals in your code. It ensures that your CSS-in-JS remains clean, consistent, and easy to read.
+A CLI tool to format `styled-components` template literals in your codebase. It ensures that your CSS-in-JS remains clean, consistent, and easy to read, supporting both `styled-components` and `css` tagged template literals.
+
+---
 
 ## Features
 
-- Automatically formats `styled-components` and `css` tagged template literals.
-- Supports nested CSS rules and comments.
-- Displays diffs or automatically fixes your files.
-- Works seamlessly with TypeScript and JavaScript projects.
+- **Automatic Formatting**: Formats `styled-components` and `css` tagged template literals in `.ts`, `.tsx`, and `.js` files.
+- **Diff View**: Displays changes as a diff for review.
+- **Auto-fix Mode**: Apply fixes directly to your files with the `--fix` option.
+- **Indentation Control**: Customize the indentation style (tabs or spaces, default: 2 spaces).
+- **Language Support**: Works seamlessly with TypeScript and JavaScript projects.
 
 ---
 
 ## Installation
 
-You can install `styled-formatter` globally or locally using `npm`:
-
 ### Global Installation
+
+Install globally to use the CLI tool anywhere:
 
 ```bash
 npm install -g styled-formatter
@@ -23,7 +26,7 @@ npm install -g styled-formatter
 
 ### Local Installation
 
-Install as a dev dependency in your project:
+Add `styled-formatter` as a development dependency in your project:
 
 ```bash
 npm install --save-dev styled-formatter
@@ -33,22 +36,31 @@ npm install --save-dev styled-formatter
 
 ## Usage
 
-`styled-formatter` provides a simple command-line interface. You can specify files or directories to format.
+`styled-formatter` provides a simple and intuitive command-line interface for checking and fixing formatting issues.
 
 ### Basic Command
 
-To check formatting issues without modifying files:
+To check for formatting issues:
 
 ```bash
 styled-formatter "src/**/*.ts"
 ```
 
-### Fix Formatting
+### Auto-fix Formatting
 
-Use the `--fix` option to automatically fix formatting issues:
+Apply fixes directly to the files:
 
 ```bash
 styled-formatter "src/**/*.ts" --fix
+```
+
+### Specify Indentation
+
+Set custom indentation styles. By default, the indentation is set to **2 spaces**:
+
+```bash
+styled-formatter "src/**/*.ts" --indent tab
+styled-formatter "src/**/*.ts" --indent 4 # 4 spaces
 ```
 
 ---
@@ -98,20 +110,19 @@ const Wrapper = styled.div`
 
 | Option           | Description                                      |
 |-------------------|--------------------------------------------------|
-| `--fix`          | Automatically fix formatting issues.             |
-| `[files...]`     | Specify files or directories to format.          |
+| `--fix`          | Automatically apply fixes to formatting issues.  |
+| `--indent <type>`| Specify indentation style (`tab` or spaces). Default: `2`. |
+| `[files...]`     | Glob pattern to specify files to format.         |
 
 ---
 
 ## Configuration
 
-`styled-formatter` does not currently require configuration files. It uses a predefined formatting style inspired by popular tools like Prettier.
+No additional configuration files are required. The tool uses a predefined formatting style inspired by best practices and popular tools like Prettier.
 
 ---
 
 ## Integration with Other Tools
-
-You can integrate `styled-formatter` with other tools or workflows:
 
 ### Using `npm scripts`
 
@@ -123,17 +134,25 @@ Add a script to your `package.json`:
 }
 ```
 
-Run the formatter using:
+Run the formatter:
 
 ```bash
 npm run format
+```
+
+### Git Hooks
+
+You can integrate `styled-formatter` with tools like `husky` to enforce formatting during pre-commit:
+
+```bash
+npx husky add .husky/pre-commit "npm run format"
 ```
 
 ---
 
 ## Contributing
 
-Contributions are welcome! If you encounter issues or have feature requests, please open an issue or submit a pull request.
+We welcome contributions! If you encounter issues or have ideas for new features, please open an issue or submit a pull request.
 
 ### Steps to Contribute
 
@@ -147,15 +166,15 @@ Contributions are welcome! If you encounter issues or have feature requests, ple
    npm install
    ```
 
-3. Run tests:
+3. Run tests to verify changes:
    ```bash
    npm test
    ```
 
-4. Make your changes and create a pull request.
+4. Create a pull request with your changes.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://yudppp.mit-license.org/) file for details.
