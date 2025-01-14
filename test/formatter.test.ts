@@ -1,10 +1,9 @@
 import { formatTemplateLiterals, FormatOption } from "../src/";
 
 describe("formatTemplateLiterals", () => {
-
-    describe("Indentation options", () => {
-        it("should format with custom space indentation", async () => {
-            const input = `
+	describe("Indentation options", () => {
+		it("should format with custom space indentation", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -15,7 +14,7 @@ color: red;
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -26,13 +25,13 @@ const Button = styled.button\`
 \`;
 `;
 
-            const option: FormatOption = { indent: 4 };
-            const result = await formatTemplateLiterals(input, option);
-            expect(result).toBe(expectedOutput);
-        });
+			const option: FormatOption = { indent: 4 };
+			const result = await formatTemplateLiterals(input, option);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should format with tab indentation", async () => {
-            const input = `
+		it("should format with tab indentation", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -43,7 +42,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -54,13 +53,13 @@ const Button = styled.button\`
 \`;
 `;
 
-            const option: FormatOption = { indent: "tab" };
-            const result = await formatTemplateLiterals(input, option);
-            expect(result).toBe(expectedOutput);
-        });
+			const option: FormatOption = { indent: "tab" };
+			const result = await formatTemplateLiterals(input, option);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should default to 2 spaces indentation when no option is provided", async () => {
-            const input = `
+		it("should default to 2 spaces indentation when no option is provided", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -71,7 +70,7 @@ color: red;
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -82,12 +81,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle mixed indentation options", async () => {
-            const input = `
+		it("should handle mixed indentation options", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Container = styled.div\`
@@ -97,7 +96,7 @@ color: green;
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Container = styled.div\`
@@ -107,26 +106,51 @@ const Container = styled.div\`
 \`;
 `;
 
-            const option: FormatOption = { indent: 4 };
-            const result = await formatTemplateLiterals(input, option);
-            expect(result).toBe(expectedOutput);
-        });
-    });
+			const option: FormatOption = { indent: 4 };
+			const result = await formatTemplateLiterals(input, option);
+			expect(result).toBe(expectedOutput);
+		});
 
-    describe("File format support", () => {
-        it("should format `.jsx` files correctly", async () => {
-            const input = `
+		it("should format css`` tagged template literal", async () => {
+			const input = `
+import { css } from "styled-components";
+
+const styles = css\`
+color: red;
+    &:hover {
+      background: blue;
+    }
+\`;
+`;
+
+			const expectedOutput = `
+import { css } from "styled-components";
+
+const styles = css\`
+  color: red;
+  &:hover {
+    background: blue;
+  }
+\`;
+`;
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
+
+		describe("File format support", () => {
+			it("should format `.jsx` files correctly", async () => {
+				const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
 color: red;
-   &:hover {
-     background: blue;
-   }
+  &:hover {
+    background: blue;
+  }
 \`;
 `;
 
-            const expectedOutput = `
+				const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -137,15 +161,16 @@ const Button = styled.button\`
 \`;
 `;
 
-            const option: FormatOption = { indent: 2 };
-            const result = await formatTemplateLiterals(input, option);
-            expect(result).toBe(expectedOutput);
-        });
-    });
+				const option: FormatOption = { indent: 2 };
+				const result = await formatTemplateLiterals(input, option);
+				expect(result).toBe(expectedOutput);
+			});
+		});
+	});
 
-    describe("Error handling", () => {
-        it("should handle malformed template literals gracefully", async () => {
-            const input = `
+	describe("Error handling", () => {
+		it("should handle malformed template literals gracefully", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -156,13 +181,13 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            // Should return original input when formatting fails
-            expect(result).toBe(input);
-        });
+			const result = await formatTemplateLiterals(input);
+			// Should return original input when formatting fails
+			expect(result).toBe(input);
+		});
 
-        it("should handle invalid syntax in expressions", async () => {
-            const input = `
+		it("should handle invalid syntax in expressions", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -170,32 +195,32 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            // Should return original input when parsing fails
-            expect(result).toBe(input);
-        });
+			const result = await formatTemplateLiterals(input);
+			// Should return original input when parsing fails
+			expect(result).toBe(input);
+		});
 
-        it("should handle empty template literals", async () => {
-            const input = `
+		it("should handle empty template literals", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Empty = styled.div\`\`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Empty = styled.div\`\`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
-    });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
+	});
 
-    describe("Complex scenarios", () => {
-        it("should handle mixed inline and block comments", async () => {
-            const input = `
+	describe("Complex scenarios", () => {
+		it("should handle mixed inline and block comments", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -208,7 +233,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -221,12 +246,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle multiple expressions in a single line", async () => {
-            const input = `
+		it("should handle multiple expressions in a single line", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -234,7 +259,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -244,12 +269,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle pseudo-selectors and media queries", async () => {
-            const input = `
+		it("should handle pseudo-selectors and media queries", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -266,7 +291,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -284,12 +309,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle nested selectors and complex nesting", async () => {
-            const input = `
+		it("should handle nested selectors and complex nesting", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Nav = styled.nav\`
@@ -309,7 +334,7 @@ const Nav = styled.nav\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Nav = styled.nav\`
@@ -329,12 +354,12 @@ const Nav = styled.nav\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle interpolation with nested template literals", async () => {
-            const input = `
+		it("should handle interpolation with nested template literals", async () => {
+			const input = `
 import styled from "styled-components";
 
 const dynamicStyles = props => \`
@@ -348,7 +373,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const dynamicStyles = props => \`
@@ -362,20 +387,20 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
-    });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
+	});
 
-    describe("Edge cases", () => {
-        it("should handle template literals with only expressions", async () => {
-            const input = `
+	describe("Edge cases", () => {
+		it("should handle template literals with only expressions", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`\${props => props.customStyles}\`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -383,12 +408,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle multiple sequential expressions", async () => {
-            const input = `
+		it("should handle multiple sequential expressions", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -398,7 +423,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -408,12 +433,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle empty lines and excessive whitespace", async () => {
-            const input = `
+		it("should handle empty lines and excessive whitespace", async () => {
+			const input = `
 import styled from "styled-components";
 
 
@@ -432,7 +457,7 @@ const Button = styled.button\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 
@@ -445,12 +470,12 @@ const Button = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle large template literals efficiently", async () => {
-            const input = `
+		it("should handle large template literals efficiently", async () => {
+			const input = `
 import styled from "styled-components";
 
 const LargeComponent = styled.div\`
@@ -476,7 +501,7 @@ const LargeComponent = styled.div\`
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const LargeComponent = styled.div\`
@@ -502,18 +527,18 @@ const LargeComponent = styled.div\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle template literals with single line styles", async () => {
-            const input = `
+		it("should handle template literals with single line styles", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Inline = styled.div\`color: red;\`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Inline = styled.div\`
@@ -521,20 +546,20 @@ const Inline = styled.div\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
-    });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
+	});
 
-    describe("Integration scenarios", () => {
-        it("should work correctly with existing Prettier configurations", async () => {
-            const input = `
+	describe("Integration scenarios", () => {
+		it("should work correctly with existing Prettier configurations", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`color:red;\`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -542,26 +567,26 @@ const Button = styled.button\`
 \`;
 `;
 
-            const option: FormatOption = { indent: 2 };
-            const result = await formatTemplateLiterals(input, option);
-            expect(result).toBe(expectedOutput);
-        });
+			const option: FormatOption = { indent: 2 };
+			const result = await formatTemplateLiterals(input, option);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should not alter non-styled-components template literals", async () => {
-            const input = `
+		it("should not alter non-styled-components template literals", async () => {
+			const input = `
 const message = \`Hello, World!\`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 const message = \`Hello, World!\`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
 
-        it("should handle multiple styled-components in a single file", async () => {
-            const input = `
+		it("should handle multiple styled-components in a single file", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -573,7 +598,7 @@ display: flex;
 \`;
 `;
 
-            const expectedOutput = `
+			const expectedOutput = `
 import styled from "styled-components";
 
 const Button = styled.button\`
@@ -585,14 +610,14 @@ const Container = styled.div\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toBe(expectedOutput);
-        });
-    });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toBe(expectedOutput);
+		});
+	});
 
-    describe("Performance tests", () => {
-        it("should format large codebases within acceptable time", async () => {
-            const input = `
+	describe("Performance tests", () => {
+		it("should format large codebases within acceptable time", async () => {
+			const input = `
 import styled from "styled-components";
 
 const Component1 = styled.div\`
@@ -606,31 +631,34 @@ const Component2 = styled.button\`
 \`;
 
 // Repeat similar components to simulate a large codebase
-${Array.from({ length: 100 }, (_, i) => `
+${Array.from(
+	{ length: 100 },
+	(_, i) => `
 const Component${i + 3} = styled.span\`
     font-size: ${12 + i}px;
     line-height: ${1.5 + i * 0.1};
 \`;
-`).join('\n')}
+`,
+).join("\n")}
 `;
 
-            const startTime = Date.now();
-            const result = await formatTemplateLiterals(input);
-            const endTime = Date.now();
-            const duration = endTime - startTime;
+			const startTime = Date.now();
+			const result = await formatTemplateLiterals(input);
+			const endTime = Date.now();
+			const duration = endTime - startTime;
 
-            // Assuming the formatter should process within 2 seconds for this input
-            expect(duration).toBeLessThan(2000);
+			// Assuming the formatter should process within 2 seconds for this input
+			expect(duration).toBeLessThan(2000);
 
-            // Basic check to ensure formatting was applied
-            expect(result).toContain("font-size: ");
-            expect(result).toContain("line-height: ");
-        }, 10000); // Setting Jest timeout to 10 seconds for this test
-    });
+			// Basic check to ensure formatting was applied
+			expect(result).toContain("font-size: ");
+			expect(result).toContain("line-height: ");
+		}, 10000); // Setting Jest timeout to 10 seconds for this test
+	});
 
-    describe("Snapshot tests", () => {
-        it("should match the snapshot for complex styled-component", async () => {
-            const input = `
+	describe("Snapshot tests", () => {
+		it("should match the snapshot for complex styled-component", async () => {
+			const input = `
 import styled from "styled-components";
 
 const ComplexButton = styled.button\`
@@ -650,8 +678,8 @@ const ComplexButton = styled.button\`
 \`;
 `;
 
-            const result = await formatTemplateLiterals(input);
-            expect(result).toMatchSnapshot();
-        });
-    });
+			const result = await formatTemplateLiterals(input);
+			expect(result).toMatchSnapshot();
+		});
+	});
 });
