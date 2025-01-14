@@ -31,11 +31,11 @@ export type FormatOption = {
 };
 
 /**
- * Determines if a given node is a styled-components tag
+ * Determines if a given node is `styled` or `css` tag
  * @param tag The AST node to check
- * @returns boolean indicating if the node is a styled-components tag
+ * @returns boolean indicating if the node is `styled` or `css` tag
  */
-const isStyledComponentTag = (tag: t.Expression): boolean => {
+const isStyledOrCssTag = (tag: t.Expression): boolean => {
 	if (t.isMemberExpression(tag)) {
 		// styled.div
 		return t.isIdentifier(tag.object, { name: "styled" });
@@ -48,6 +48,11 @@ const isStyledComponentTag = (tag: t.Expression): boolean => {
 			(t.isMemberExpression(callee) &&
 				t.isIdentifier(callee.object, { name: "styled" }))
 		);
+	}
+
+	// css``
+	if (t.isIdentifier(tag, { name: "css" })) {
+		return true;
 	}
 
 	return false;
@@ -211,7 +216,7 @@ export const formatTemplateLiterals = async (
 		traverse(ast, {
 			TaggedTemplateExpression(path: NodePath<t.TaggedTemplateExpression>) {
 				if (
-					isStyledComponentTag(path.node.tag) &&
+					isStyledOrCssTag(path.node.tag) &&
 					path.node.quasi.quasis.length > 0
 				) {
 					taggedTemplateExpressions.push(path.node);
