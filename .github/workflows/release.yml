@@ -12,10 +12,9 @@ on:
           - major
           - minor
           - patch
-
 permissions:
   contents: write  
-
+  id-token: write
 jobs:
   release:
     name: Create Release
