@@ -39,7 +39,6 @@ jobs:
         id: bump-version
         run: |
           npm version ${{ github.event.inputs.version_type }}
-          echo "::set-output name=version::v$(node -p \"require('./package.json').version\")"
 
       - name: Build library
         run: npm run build
